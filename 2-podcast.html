@@ -55,12 +55,13 @@
     .sound svg { width: 16px; height: 16px; }
 
     /* ---------- cruciverba ---------- */
-    #cross { justify-content: space-between; }
+    #cross { justify-content: flex-end; gap: 18px; }
+    .mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; width: 100%; }
     .top { width: 100%; text-align: center; }
-    .top h2 { font-size: 1.6rem; }
     .clue {
-      margin-top: 6px;
-      min-height: 2.9em;
+      margin: 0 auto;
+      max-width: 30ch;
+      min-height: 2.6em;
       font-family: var(--serif);
       font-style: italic;
       font-size: clamp(1.15rem, 5vw, 1.4rem);
@@ -69,7 +70,7 @@
       transition: opacity 0.2s, transform 0.2s;
     }
     .clue.swap { opacity: 0; transform: translateY(5px); }
-    .clue .n { font-family: var(--sans); font-style: normal; font-size: 0.8rem; color: var(--muted); margin-right: 6px; vertical-align: middle; }
+    .clue .n { color: var(--muted); margin-right: 0.3em; }
 
     .grid {
       display: grid;
@@ -124,7 +125,7 @@
     #end h2 { font-size: clamp(2rem, 9vw, 2.6rem); max-width: 16ch; }
     #end p { margin: 12px 0 30px; color: var(--muted); max-width: 28ch; }
 
-    @media (max-height: 700px) { .grid { --cell: 38px; } .key { height: 42px; } .clue { min-height: 2.5em; } }
+    @media (max-height: 700px) { .grid { --cell: 38px; } .key { height: 42px; } .mid { gap: 18px; } }
   </style>
 </head>
 <body>
@@ -146,11 +147,10 @@
 
   <!-- 2. cruciverba -->
   <section id="cross" class="screen hidden">
-    <div class="top">
-      <h2 id="cross-title">Il podcast</h2>
-      <p class="clue" id="clue"></p>
+    <div class="mid">
+      <div class="top"><p class="clue" id="clue"></p></div>
+      <div class="grid" id="grid" aria-label="Cruciverba"></div>
     </div>
-    <div class="grid" id="grid" aria-label="Cruciverba"></div>
     <div class="kbd" id="kbd"></div>
   </section>
 
@@ -185,7 +185,6 @@
         lead: '',                            // riga sotto il titolo (vuota = nascosta)
         button: 'Mmhhhh vediamo…',
       },
-      crossTitle: 'Il podcast',
       // parole: posizione (riga, colonna, da 0) e direzione 'a' = orizzontale, 'g' = verticale.
       // SEGNAPOSTO: da sostituire con le vostre.
       words: [
@@ -204,7 +203,6 @@
     $('#intro-lead').textContent = CONFIG.intro.lead;
     if (!CONFIG.intro.lead) $('#intro-lead').remove();
     $('#go').textContent = CONFIG.intro.button;
-    $('#cross-title').textContent = CONFIG.crossTitle;
     $('#end-title').textContent = CONFIG.endTitle;
     $('#end-msg').textContent = CONFIG.endMsg;
     $('#next').href = CONFIG.next;
@@ -282,9 +280,8 @@
     const grid = $('#grid');
     grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
     // numerazione come nei cruciverba: in ordine di lettura delle caselle iniziali
-    const starts = [...W].sort((a, b) => a.row - b.row || a.col - b.col);
-    const numAt = new Map(); let n = 0;
-    for (const w of starts) { const k = key(w.row, w.col); if (!numAt.has(k)) numAt.set(k, ++n); w.num = numAt.get(k); }
+    const numAt = new Map();
+    W.forEach((w, i) => { w.num = i + 1; const k = key(w.row, w.col); if (!numAt.has(k)) numAt.set(k, w.num); });
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const used = W.some((w) => { for (let i = 0; i < w.answer.length; i++) if (w.row + (w.dir === 'g' ? i : 0) === r && w.col + (w.dir === 'a' ? i : 0) === c) return true; return false; });
       const el = document.createElement('div');
@@ -310,7 +307,7 @@
       pos = p;
       const clue = $('#clue');
       clue.classList.add('swap');
-      setTimeout(() => { clue.innerHTML = `<span class="n">${w.num}${w.dir === 'a' ? '→' : '↓'}</span>${w.clue}`; clue.classList.remove('swap'); }, 150);
+      setTimeout(() => { clue.innerHTML = `<span class="n">${w.num}.</span>${w.clue}`; clue.classList.remove('swap'); }, 150);
       paint();
     }
     function paint() {
