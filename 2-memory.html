@@ -105,14 +105,16 @@
       // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare.
       // SEGNAPOSTO: i ritagli già presenti, da sostituire con le immagini vere (8 coppie per la griglia 4×4).
       images: [
+        ['img/people/cut/gere-chitarra.webp', 'img/people/cut/bubi-mic1.webp'],  // tu con la chitarra + lei con l'ukulele
+        // ['img/people/cut/jon.webp', 'img/people/cut/ygritte.webp'],         // Jon Snow + Ygritte (in arrivo)
+        // --- segnaposto, da sostituire con le 6 immagini vere ---
         'img/people/cut/bubi1.webp',
         'img/people/cut/bubi2.webp',
         'img/people/cut/bubi3.webp',
         'img/people/cut/gere1.webp',
-        'img/people/cut/gere2.webp',
         'img/people/cut/mara.webp',
         'img/people/cut/snoop.webp',
-        ['img/people/cut/snoop2.webp', 'img/people/cut/mara-ventaglio.webp'],   // es. Jon Snow + Ygritte
+        'img/people/cut/snoop2.webp',
       ],
       cols: 4,                 // colonne della griglia (4 → 4 righe con 8 coppie; 3 → 4 righe con 6 coppie)
       count: (found, total) => `${found} / ${total} coppie`,
