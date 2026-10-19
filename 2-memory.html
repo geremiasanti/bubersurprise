@@ -92,8 +92,9 @@
        CONFIG — modifica qui
        ============================================================ */
     const CONFIG = {
-      // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare.
-      // Le immagini sono quadrate (img/memory/, 600×600). SEGNAPOSTO sotto, da sostituire con le 6 immagini vere.
+      // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare;
+      // oppure { pair: [a, b], sound: 'file audio', boom: true } per far partire un audio e l'esplosione quando si trova.
+      // Le immagini sono quadrate (img/memory/, 600×600).
       images: [
         ['img/memory/chitarra.webp', 'img/memory/ukulele.webp'],   // tu con la chitarra + lei con l'ukulele
         ['img/memory/jon.webp', 'img/memory/ygritte.webp'],       // Jon Snow + Ygritte
@@ -101,9 +102,8 @@
         'img/memory/facce.webp',      // facce vicine, linguaccia
         'img/memory/divano.webp',     // abbracciati sul divano
         'img/memory/denti.webp',      // lavarsi i denti allo specchio
-        // --- mancano 2 coppie: segnaposto ---
-        'img/people/cut/mara.webp',
-        'img/people/cut/snoop.webp',
+        { pair: ['img/memory/mj.webp', 'img/memory/poggibonsi.webp'], sound: 'media/poggibonsi.mp3', boom: true },  // Michael Jackson + Poggibonsi
+        'img/memory/calzini.webp',    // calzini scambiati
       ],
       cols: 4,                 // colonne della griglia (4 → 4 righe con 8 coppie; 3 → 4 righe con 6 coppie)
       endTitle: 'Tutte le coppie.',
@@ -118,7 +118,10 @@
     board.style.gridTemplateColumns = `repeat(${CONFIG.cols}, 1fr)`;
 
     // mazzo: ogni immagine due volte, mescolato
-    const deck = CONFIG.images.flatMap((e, i) => Array.isArray(e) ? [{ src: e[0], id: i }, { src: e[1], id: i }] : [{ src: e, id: i }, { src: e, id: i }]);
+    const pairs = CONFIG.images.map((e) => Array.isArray(e) ? { pair: e } : typeof e === 'string' ? { pair: [e, e] } : e);
+    const deck = pairs.flatMap((p, i) => [{ src: p.pair[0], id: i }, { src: p.pair[1], id: i }]);
+    // audio precaricati per le coppie che ne hanno uno
+    const sounds = pairs.map((p) => { if (!p.sound) return null; const a = new Audio(p.sound); a.preload = 'auto'; return a; });
     for (let i = deck.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [deck[i], deck[j]] = [deck[j], deck[i]]; }
 
     const cards = deck.map((d) => {
@@ -145,7 +148,13 @@
       if (a.dataset.id === b.dataset.id) {
         setTimeout(() => {
           a.classList.replace('open', 'done'); b.classList.replace('open', 'done');
-          Buber.sound.pop(); Buber.vibrate([15, 30, 15]);
+          const p = pairs[+a.dataset.id];
+          if (p.boom) {
+            for (const el of [a, b]) { const r = el.getBoundingClientRect(); Buber.explode({ x: r.left + r.width / 2, y: r.top + r.height / 2, size: 0.9 }); }
+          } else { Buber.sound.pop(); }
+          const snd = sounds[+a.dataset.id];
+          if (snd) { snd.currentTime = 0; snd.play().catch(() => {}); }
+          Buber.vibrate([15, 30, 15]);
           found++;
           open = []; lock = false;
           if (found === total) finish();
