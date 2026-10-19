@@ -15,13 +15,13 @@
     /* tre fasce che scorrono in orizzontale, una sopra l'altra */
     .rows {
       position: fixed; inset: 0;
-      display: flex; flex-direction: column; justify-content: space-evenly;
-      padding: max(10px, env(safe-area-inset-top)) 0 max(10px, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: max(12px, env(safe-area-inset-top)) 0 max(12px, env(safe-area-inset-bottom));
       z-index: 0;
     }
     .row {
       position: relative;
-      height: 29dvh;
+      height: 34dvh;
       overflow: visible;
       will-change: transform;
     }
@@ -77,8 +77,8 @@
        ============================================================ */
     const CONFIG = {
       title: 'Buon compleanno Bubi',     // il <3 è aggiunto dopo
-      rows: 3,
-      speeds: [26, -20, 32],             // px/s per fascia (negativo = verso destra)
+      rows: 2,                           // una fascia sopra il testo, una sotto
+      speeds: [26, -22],                 // px/s per fascia (negativo = verso destra)
       photos: [
         'img/finale/bubi1.webp', 'img/finale/bubi2.webp', 'img/finale/bubi3.webp', 'img/finale/bubi-ukulele.webp',
         'img/finale/specchio.webp', 'img/finale/facce.webp', 'img/finale/divano.webp', 'img/finale/denti.webp', 'img/finale/calzini.webp',
