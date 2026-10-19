@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shared.css?v=7">
+  <link rel="stylesheet" href="shared.css?v=8">
   <style>
     html, body { overflow: hidden; height: 100dvh; }
     body { transition: background 0.25s; }
@@ -80,12 +80,7 @@
     .choices .btn { min-width: 120px; }
     #end.photos .choices { display: none; }
     #end.photos h2 { color: var(--muted); }
-    #after {
-      position: fixed; left: 0; right: 0;
-      bottom: max(28px, env(safe-area-inset-bottom));
-      display: flex; justify-content: center;
-      z-index: 2;
-    }
+
   </style>
 </head>
 <body>
@@ -107,9 +102,8 @@
       </div>
     </div>
   </section>
-  <div id="after" class="hidden"><a class="btn rise" id="next" href="#">Avanti</a></div>
 
-  <script src="shared.js?v=7"></script>
+  <script src="shared.js?v=8"></script>
   <script>
     Buber.requireStep(4);
 
@@ -137,13 +131,12 @@
         { src: 'img/people/cut/gere2.webp', size: 120 },  // bacio
         { src: 'img/people/cut/gere3.webp', size: 120 },  // linguaccia
       ],
-      next: '4-finale.html',
+      next: '4-finale.html',   // scoppiata l'ultima foto si passa qui da soli
     };
 
     const $ = (s) => document.querySelector(s);
     $('#question').textContent = CONFIG.question;
     $('#end-title').textContent = CONFIG.endQuestion;
-    $('#next').href = CONFIG.next;
 
     const Emo = Buber.bouncer($('#canvas'), { damp: 0.9, minSpeed: 30 });
     const steps = $('#steps');
@@ -182,7 +175,7 @@
       if (p.kind === 'photo') {              // le foto scoppiano in coriandoli
         Emo.remove(p);
         Buber.explode({ x: p.x, y: p.y, size: 0.8 });
-        if (!Emo.parts.some((q) => q.dying == null && q.kind === 'photo')) setTimeout(done, 500);
+        if (!Emo.parts.some((q) => q.dying == null && q.kind === 'photo')) setTimeout(done, 900);
         return;
       }
       if (phase !== 'game') return;
@@ -260,8 +253,7 @@
       if (phase === 'done') return;
       phase = 'done';
       Buber.complete(4);
-      Buber.sound.win();
-      $('#after').classList.remove('hidden');
+      location.href = CONFIG.next;
     }
   </script>
 </body>

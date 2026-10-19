@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shared.css?v=7">
+  <link rel="stylesheet" href="shared.css?v=8">
   <style>
     html, body { overflow: hidden; height: 100dvh; }
 
@@ -67,8 +67,6 @@
     .card.wrong .front { border-color: var(--bad); box-shadow: 0 0 0 3px var(--blush); }
     .card.done { cursor: default; }
 
-    #end { text-align: center; }
-    #end h2 { font-size: clamp(1.9rem, 8vw, 2.4rem); max-width: 18ch; margin: 0 auto 30px; }
   </style>
 </head>
 <body>
@@ -77,14 +75,8 @@
     <div class="board" id="board" aria-label="Memory"></div>
   </section>
 
-  <section id="end" class="screen hidden">
-    <div class="rise">
-      <h2 id="end-title">Tutte le coppie.</h2>
-      <a class="btn" id="next" href="#">Avanti</a>
-    </div>
-  </section>
 
-  <script src="shared.js?v=7"></script>
+  <script src="shared.js?v=8"></script>
   <script>
     Buber.requireStep(3);
 
@@ -93,7 +85,7 @@
        ============================================================ */
     const CONFIG = {
       // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare;
-      // oppure { pair: [a, b], sound: 'file audio', boom: true } per far partire un audio e l'esplosione quando si trova.
+      // oppure { pair: [a, b], sound: 'file audio', boom: true, theme: 'got' } per audio, esplosione o sigla quando si trova.
       // Le immagini sono quadrate (img/memory/, 600×600).
       images: [
         ['img/memory/chitarra.webp', 'img/memory/ukulele.webp'],   // tu con la chitarra + lei con l'ukulele
@@ -106,13 +98,10 @@
         'img/memory/calzini.webp',    // calzini scambiati
       ],
       cols: 4,                 // colonne della griglia (4 → 4 righe con 8 coppie; 3 → 4 righe con 6 coppie)
-      endTitle: 'Tutte le coppie.',
-      next: '3-dolci.html',
+      next: '3-dolci.html',   // finite le coppie si passa qui da soli, aspettando che l'audio in corso finisca
     };
 
     const $ = (s) => document.querySelector(s);
-    $('#end-title').textContent = CONFIG.endTitle;
-    $('#next').href = CONFIG.next;
 
     const board = $('#board');
     board.style.gridTemplateColumns = `repeat(${CONFIG.cols}, 1fr)`;
@@ -154,6 +143,7 @@
           } else { Buber.sound.pop(); }
           const snd = sounds[+a.dataset.id];
           if (snd) { snd.currentTime = 0; snd.play().catch(() => {}); }
+          if (p.theme === 'got') Buber.sound.got();
           Buber.vibrate([15, 30, 15]);
           found++;
           open = []; lock = false;
@@ -170,9 +160,13 @@
 
     function finish() {
       Buber.complete(3);
-      Buber.sound.win(); Buber.vibrate([25, 40, 25, 40, 70]);
+      Buber.vibrate([25, 40, 25, 40, 70]);
       Buber.confetti({ count: 140 });
-      setTimeout(() => { $('#game').classList.add('hidden'); $('#end').classList.remove('hidden'); }, 1000);
+      // se c'è un audio in corso (Poggibonsi, sigla) si aspetta che finisca
+      let wait = 0;
+      for (const a of sounds) if (a && !a.paused && isFinite(a.duration)) wait = Math.max(wait, (a.duration - a.currentTime) * 1000);
+      if (Buber.sound.busyUntil) wait = Math.max(wait, Buber.sound.busyUntil - performance.now());
+      setTimeout(() => { location.href = CONFIG.next; }, Math.max(1200, wait + 500));
     }
   </script>
 </body>

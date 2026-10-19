@@ -412,3 +412,39 @@ Buber.explode = function ({ x, y, size = 1, word = null } = {}) {
   }
   requestAnimationFrame(frame);
 };
+
+/* ------------------------------------------------------------------
+   Sigla di Game of Thrones, sintetizzata (tema principale, 4 battute).
+   Ritorna la durata in ms. Niente file audio.
+   ------------------------------------------------------------------ */
+Buber.sound.got = function () {
+  const N = { C4: 261.63, Eb4: 311.13, E4: 329.63, F4: 349.23, G4: 392.0 };
+  const E = 0.16;                                   // durata di una croma, in secondi
+  const bars = [['G4', 'C4', 'Eb4', 'F4'], ['G4', 'C4', 'Eb4', 'F4'], ['G4', 'C4', 'E4', 'F4'], ['G4', 'C4', 'E4', 'F4']];
+  const lens = [3, 3, 1, 1];                        // lunga, lunga, breve, breve (in crome)
+  const total = bars.length * 8 * E;
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = ac.currentTime + 0.05;
+    const master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 0.8; lp.connect(master);
+    const note = (f, at, dur, { type = 'sawtooth', gain = 0.22, oct = 1 } = {}) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = f * oct;
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(gain, at + 0.03);
+      g.gain.setValueAtTime(gain, at + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+      o.connect(g).connect(lp); o.start(at); o.stop(at + dur + 0.02);
+    };
+    let t = t0;
+    bars.forEach((bar) => {
+      // melodia (violoncello): lunga lunga breve breve
+      let tb = t;
+      bar.forEach((n, i) => { const d = lens[i] * E; note(N[n], tb, d * 0.95); note(N[n], tb, d * 0.95, { type: 'sine', gain: 0.18, oct: 0.5 }); tb += d; });
+      // ostinato di crome un'ottava sopra, piano
+      for (let i = 0; i < 8; i++) note(N[bar[i % 4]], t + i * E, E * 0.8, { type: 'triangle', gain: 0.06, oct: 2 });
+      t += 8 * E;
+    });
+  } catch (_) {}
+  Buber.sound.busyUntil = performance.now() + total * 1000;
+  return total * 1000;
+};
