@@ -1,0 +1,109 @@
+/* Bubersurprise — stile condiviso (mobile first, crema + pastello) */
+:root {
+  --paper: #f3efe6;        /* sfondo crema */
+  --paper-deep: #e9e3d6;   /* crema più scura, per gli incavi */
+  --paper-light: #fbf9f4;  /* crema più chiara, per i rilievi */
+  --ink: #1f1d1a;
+  --ink-soft: #4a463f;
+  --muted: #837c70;
+  --line: #d9d2c4;
+
+  --lavender: #cfc8e6;
+  --sage: #c3d1bd;
+  --blush: #ecc9c6;
+  --sky: #c6d8e3;
+  --butter: #efe3bd;
+
+  --ok: #8fb08a;
+  --bad: #d49a96;
+
+  --serif: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --shadow-out: 8px 8px 20px rgba(31, 29, 26, 0.10), -8px -8px 20px rgba(255, 255, 255, 0.85);
+  --shadow-in:  inset 5px 5px 12px rgba(31, 29, 26, 0.10), inset -5px -5px 12px rgba(255, 255, 255, 0.9);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--sans);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-variation-settings: 'SOFT' 100, 'opsz' 144;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+p { margin: 0; line-height: 1.55; }
+em { font-style: italic; }
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 14px 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+}
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+
+.hidden { display: none !important; }
+
+@keyframes rise-in {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.rise { animation: rise-in 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.shake { animation: shake 0.4s ease; }
+
+#confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .shake { animation: none; }
+}

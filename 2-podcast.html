@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3efe6">
+  <title>Bubersurprise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css?v=7">
+  <style>
+    html, body { overflow: hidden; height: 100dvh; }
+
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center;
+      padding: max(28px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+      z-index: 1;
+    }
+
+    /* ---------- intro: video in loop sullo sfondo, titolo sopra ---------- */
+    #intro { justify-content: center; text-align: center; gap: 22px; overflow: hidden; }
+    .vids { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+    .vids video {
+      position: absolute;
+      border-radius: 14px;
+      box-shadow: 0 14px 30px rgba(31, 29, 26, 0.22);
+      object-fit: cover;
+      background: var(--paper-deep);
+    }
+    .veil {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      padding: 16px 18px 18px;
+      border-radius: 18px;
+      background: rgba(243, 239, 230, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .sound {
+      position: absolute; z-index: 2;
+      top: max(16px, env(safe-area-inset-top)); right: 16px;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--paper-light);
+      color: var(--ink-soft);
+      font: inherit; font-size: 0.8rem;
+      cursor: pointer;
+      animation: rise-in 0.4s both;
+    }
+    .sound svg { width: 16px; height: 16px; }
+
+    /* ---------- cruciverba ---------- */
+    #cross { justify-content: space-between; }
+    .top { width: 100%; text-align: center; }
+    .top h2 { font-size: 1.6rem; }
+    .clue {
+      margin-top: 6px;
+      min-height: 2.9em;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.15rem, 5vw, 1.4rem);
+      line-height: 1.25;
+      color: var(--ink);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .clue.swap { opacity: 0; transform: translateY(5px); }
+    .clue .n { font-family: var(--sans); font-style: normal; font-size: 0.8rem; color: var(--muted); margin-right: 6px; vertical-align: middle; }
+
+    .grid {
+      display: grid;
+      gap: 6px;
+      --cell: 44px;
+      grid-auto-rows: var(--cell);
+      touch-action: manipulation;
+    }
+    .cell {
+      position: relative;
+      width: var(--cell); height: var(--cell);
+      display: grid; place-items: center;
+      border-radius: 8px;
+      background: var(--paper-light);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 2px rgba(31, 29, 26, 0.05);
+      font-family: var(--sans); font-weight: 500; font-size: 1.25rem;
+      color: var(--ink);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
+    }
+    .cell .num { position: absolute; top: 2px; left: 4px; font-size: 0.55rem; color: var(--muted); font-weight: 500; }
+    .cell.word { background: #fbf9f4; border-color: #cfc8e6; box-shadow: 0 0 0 2px rgba(207, 200, 230, 0.45); }
+    .cell.cur  { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(31, 29, 26, 0.08); }
+    .cell.ok   { background: var(--sage); border-color: var(--ok); box-shadow: none; }
+    .cell.bad  { background: var(--blush); border-color: var(--bad); color: var(--bad); box-shadow: none; }
+
+    /* tastiera lettere, stesso stile dei tasti del PIN */
+    .kbd { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; }
+    .row { display: flex; justify-content: center; gap: 5px; }
+    .key {
+      flex: 0 0 auto;
+      width: calc((100% - 9 * 5px) / 10); max-width: 40px; height: 48px;
+      display: grid; place-items: center;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--paper-light);
+      color: var(--ink);
+      font: inherit; font-weight: 500; font-size: 1.05rem;
+      box-shadow: 0 1px 2px rgba(31, 29, 26, 0.06);
+      cursor: pointer; user-select: none;
+      transition: background 0.1s, box-shadow 0.1s, transform 0.1s;
+    }
+    .key:active { background: var(--paper-deep); box-shadow: none; transform: translateY(1px); }
+    .key.wide { width: calc((100% - 9 * 5px) / 10 * 1.5 + 2.5px); max-width: 62px; color: var(--ink-soft); }
+    .key.wide svg { width: 22px; height: 22px; }
+
+    /* fine */
+    #end { justify-content: center; text-align: center; }
+    #end h2 { font-size: clamp(2rem, 9vw, 2.6rem); max-width: 16ch; }
+    #end p { margin: 12px 0 30px; color: var(--muted); max-width: 28ch; }
+
+    @media (max-height: 700px) { .grid { --cell: 38px; } .key { height: 42px; } .clue { min-height: 2.5em; } }
+  </style>
+</head>
+<body>
+
+  <!-- 1. intro -->
+  <section id="intro" class="screen">
+    <div class="vids" id="vids" aria-hidden="true"></div>
+    <button class="sound hidden" id="sound" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>
+      attiva l'audio
+    </button>
+    <div class="veil">
+      <div class="pics" id="pics"></div>
+      <h1 id="intro-title">Se avessi un podcast, parleresti di…</h1>
+      <p class="lead" id="intro-lead"></p>
+      <button class="btn" id="go">Lessss go</button>
+    </div>
+  </section>
+
+  <!-- 2. cruciverba -->
+  <section id="cross" class="screen hidden">
+    <div class="top">
+      <h2 id="cross-title">Il podcast</h2>
+      <p class="clue" id="clue"></p>
+    </div>
+    <div class="grid" id="grid" aria-label="Cruciverba"></div>
+    <div class="kbd" id="kbd"></div>
+  </section>
+
+  <!-- 3. fine -->
+  <section id="end" class="screen hidden">
+    <div class="rise">
+      <p class="eyebrow">Risolto</p>
+      <h2 id="end-title">Un podcast così lo ascolterei.</h2>
+      <p id="end-msg">Puntata uno, quando vuoi.</p>
+      <a class="btn" id="next" href="#">Avanti</a>
+    </div>
+  </section>
+
+  <script src="shared.js?v=7"></script>
+  <script>
+    Buber.requireStep(3);
+
+    /* ============================================================
+       CONFIG — modifica qui
+       ============================================================ */
+    const CONFIG = {
+      intro: {
+        images: [],                          // ritagli opzionali sopra il titolo (es. 'img/people/cut/bubi-mic2.webp')
+        // video in loop sparsi sullo sfondo; `sound: true` solo su quello che deve avere l'audio
+        // pos: 'tl' alto-sinistra, 'tr' alto-destra, 'bottom' in basso. shape: 'landscape' ritaglia un video verticale in orizzontale.
+        videos: [
+          { src: 'media/podcast-1.mp4', pos: 'tl', shape: 'landscape' },
+          { src: 'media/podcast-2.mp4', pos: 'tr' },
+          { src: 'media/ukulele.mp4',   pos: 'bottom', sound: true },
+        ],
+        title: 'Se avessi un podcast, parleresti di…',
+        lead: '',                            // riga sotto il titolo (vuota = nascosta)
+        button: 'Lessss go',
+      },
+      crossTitle: 'Il podcast',
+      // parole: posizione (riga, colonna, da 0) e direzione 'a' = orizzontale, 'g' = verticale.
+      // SEGNAPOSTO: da sostituire con le vostre.
+      words: [
+        { clue: 'Quello della prima sera, che poi ti ha fatto stare male.', answer: 'SUSHI',  row: 0, col: 0, dir: 'a' },
+        { clue: 'Arancione, in bicchiere basso.',                           answer: 'SPRITZ', row: 0, col: 0, dir: 'g' },
+        { clue: 'Ce l’avevi sulle spalle e la faceva ridere.',       answer: 'ZAINO',  row: 5, col: 0, dir: 'a' },
+        { clue: 'Il nome di chi sta giocando.',                            answer: 'BUBI',   row: 2, col: 2, dir: 'g' },
+      ],
+      endTitle: 'Un podcast così lo ascolterei.',
+      endMsg: 'Puntata uno, quando vuoi.',
+      next: '3-prossimo.html',
+    };
+
+    const $ = (s) => document.querySelector(s);
+    $('#intro-title').textContent = CONFIG.intro.title;
+    $('#intro-lead').textContent = CONFIG.intro.lead;
+    if (!CONFIG.intro.lead) $('#intro-lead').remove();
+    $('#go').textContent = CONFIG.intro.button;
+    $('#cross-title').textContent = CONFIG.crossTitle;
+    $('#end-title').textContent = CONFIG.endTitle;
+    $('#end-msg').textContent = CONFIG.endMsg;
+    $('#next').href = CONFIG.next;
+    CONFIG.intro.images.forEach((src) => { const im = new Image(); im.src = src; im.alt = ''; $('#pics').appendChild(im); });
+    if (!CONFIG.intro.images.length) $('#pics').remove();
+
+    /* video sullo sfondo: tre zone (alto-sx, destra, basso-sx) con un po' di caso */
+    (() => {
+      const box = $('#vids');
+      // posizioni fisse con un po' di caso. rot: gradi (negativo = lato destro più in alto)
+      const M = 16;   // margine minimo dai bordi, in px
+      const slots = {
+        tl:     { x: [3, 6],    y: [5, 8],    w: [42, 46],  rot: [-8, -5] },
+        tr:     { x: [52, 55],  y: [12, 16],  w: [38, 42],  rot: [10, 14] },
+        bottom: { x: [0, 0],    y: [62, 65],  w: [100, 100], rot: [-2.5, -1] },
+      };
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      let loud = null;
+      CONFIG.intro.videos.forEach((v, i) => {
+        const el = document.createElement('video');
+        el.src = v.src; el.loop = true; el.muted = true; el.playsInline = true; el.autoplay = true; el.preload = 'auto';
+        el.setAttribute('playsinline', ''); el.setAttribute('muted', '');
+        const s = slots[v.pos] || slots.tl;
+        if (v.pos === 'bottom') {
+          el.style.left = M + 'px'; el.style.width = `calc(100vw - ${2 * M}px)`;
+        } else {
+          el.style.left = `max(${M}px, ${rnd(...s.x)}vw)`;
+          el.style.width = `min(${rnd(...s.w)}vw, calc(100vw - ${2 * M}px))`;
+        }
+        el.style.top = rnd(...s.y) + 'dvh';
+        if (v.shape === 'landscape') el.style.aspectRatio = '4 / 3';
+        el.style.transform = `rotate(${rnd(...s.rot)}deg)`;
+        box.appendChild(el);
+        el.play().catch(() => {});
+        if (v.sound) loud = el;
+      });
+      if (!loud) return;
+      const btn = $('#sound');
+      const unmute = () => {
+        loud.muted = false; loud.removeAttribute('muted'); loud.volume = 1;
+        loud.play().then(() => btn.classList.add('hidden')).catch(() => btn.classList.remove('hidden'));
+      };
+      // prova subito con l'audio; se il browser lo blocca, parte muto e mostra il chip:
+      // si sblocca col chip o con un tocco qualsiasi sull'intro
+      loud.muted = false; loud.removeAttribute('muted');
+      loud.play().catch(() => {
+        loud.muted = true; loud.play().catch(() => {});
+        btn.classList.remove('hidden');
+        const once = () => { unmute(); removeEventListener('pointerdown', once, true); };
+        addEventListener('pointerdown', once, true);
+      });
+      btn.addEventListener('click', unmute);
+      // uscendo dall'intro l'audio si ferma
+      $('#go').addEventListener('click', () => { box.querySelectorAll('video').forEach((e) => e.pause()); });
+    })();
+
+    $('#go').addEventListener('click', () => {
+      Buber.sound.unlock();
+      $('#intro').classList.add('hidden');
+      $('#cross').classList.remove('hidden');
+      select(0);
+    });
+
+    /* ------------------------------------------------------------
+       Griglia
+       ------------------------------------------------------------ */
+    const W = CONFIG.words.map((w) => ({ ...w, answer: w.answer.toUpperCase(), cells: [] }));
+    const cellAt = new Map();                   // "r,c" → elemento
+    const key = (r, c) => `${r},${c}`;
+    let rows = 0, cols = 0;
+    for (const w of W) for (let i = 0; i < w.answer.length; i++) {
+      const r = w.row + (w.dir === 'g' ? i : 0), c = w.col + (w.dir === 'a' ? i : 0);
+      rows = Math.max(rows, r + 1); cols = Math.max(cols, c + 1);
+    }
+    const grid = $('#grid');
+    grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
+    // numerazione come nei cruciverba: in ordine di lettura delle caselle iniziali
+    const starts = [...W].sort((a, b) => a.row - b.row || a.col - b.col);
+    const numAt = new Map(); let n = 0;
+    for (const w of starts) { const k = key(w.row, w.col); if (!numAt.has(k)) numAt.set(k, ++n); w.num = numAt.get(k); }
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const used = W.some((w) => { for (let i = 0; i < w.answer.length; i++) if (w.row + (w.dir === 'g' ? i : 0) === r && w.col + (w.dir === 'a' ? i : 0) === c) return true; return false; });
+      const el = document.createElement('div');
+      if (used) {
+        el.className = 'cell'; el.dataset.r = r; el.dataset.c = c;
+        if (numAt.has(key(r, c))) { const s = document.createElement('span'); s.className = 'num'; s.textContent = numAt.get(key(r, c)); el.appendChild(s); }
+        const L = document.createElement('span'); L.className = 'L'; el.appendChild(L);
+        cellAt.set(key(r, c), el);
+      } else { el.style.visibility = 'hidden'; }
+      grid.appendChild(el);
+    }
+    for (const w of W) for (let i = 0; i < w.answer.length; i++) w.cells.push(cellAt.get(key(w.row + (w.dir === 'g' ? i : 0), w.col + (w.dir === 'a' ? i : 0))));
+
+    const letters = new Map();                  // "r,c" → lettera scritta
+    const getL = (el) => letters.get(key(el.dataset.r, el.dataset.c)) || '';
+    const setL = (el, L) => { letters.set(key(el.dataset.r, el.dataset.c), L); el.querySelector('.L').textContent = L; };
+
+    let cur = 0, pos = 0, solved = new Set();
+
+    function select(i, p) {
+      cur = i; const w = W[cur];
+      if (p == null) { p = w.cells.findIndex((c) => !getL(c)); if (p < 0) p = 0; }
+      pos = p;
+      const clue = $('#clue');
+      clue.classList.add('swap');
+      setTimeout(() => { clue.innerHTML = `<span class="n">${w.num}${w.dir === 'a' ? '→' : '↓'}</span>${w.clue}`; clue.classList.remove('swap'); }, 150);
+      paint();
+    }
+    function paint() {
+      const w = W[cur];
+      for (const el of cellAt.values()) el.classList.remove('word', 'cur');
+      if (!solved.has(cur)) { w.cells.forEach((c) => c.classList.add('word')); w.cells[pos]?.classList.add('cur'); }
+    }
+
+    // tocco su una casella: seleziona la parola che la contiene (se due, alterna)
+    grid.addEventListener('click', (e) => {
+      const el = e.target.closest('.cell'); if (!el) return;
+      const r = +el.dataset.r, c = +el.dataset.c;
+      const owners = W.map((w, i) => (w.cells.includes(el) ? i : -1)).filter((i) => i >= 0 && !solved.has(i));
+      if (!owners.length) return;
+      const i = owners.includes(cur) && owners.length > 1 ? owners[(owners.indexOf(cur) + 1) % owners.length] : (owners.includes(cur) ? cur : owners[0]);
+      select(i, W[i].cells.indexOf(el));
+    });
+
+    function type(L) {
+      const w = W[cur]; if (solved.has(cur)) return;
+      setL(w.cells[pos], L);
+      Buber.vibrate(6);
+      if (w.cells.every(getL)) return check();           // completa (anche grazie agli incroci)
+      // prossima casella vuota dopo questa, altrimenti la prima vuota
+      let nxt = w.cells.findIndex((c, i) => i > pos && !getL(c));
+      if (nxt < 0) nxt = w.cells.findIndex((c) => !getL(c));
+      pos = nxt; paint();
+    }
+    function back() {
+      const w = W[cur]; if (solved.has(cur)) return;
+      if (getL(w.cells[pos])) setL(w.cells[pos], '');
+      else if (pos > 0) { pos--; setL(w.cells[pos], ''); }
+      paint();
+    }
+    function check() {
+      const w = W[cur];
+      const got = w.cells.map(getL).join('');
+      if (got === w.answer) {
+        solved.add(cur);
+        w.cells.forEach((c) => c.classList.add('ok'));
+        Buber.sound.pop(); Buber.vibrate([15, 30, 15]);
+        // altre parole già completate grazie agli incroci?
+        W.forEach((v, i) => { if (!solved.has(i) && v.cells.every(getL) && v.cells.map(getL).join('') === v.answer) { solved.add(i); v.cells.forEach((c) => c.classList.add('ok')); } });
+        if (solved.size === W.length) return finish();
+        const nxt = W.findIndex((_, i) => !solved.has(i));
+        setTimeout(() => select(nxt), 350);
+      } else {
+        Buber.sound.error(); Buber.vibrate([50, 40, 50]);
+        w.cells.forEach((c) => { if (!c.classList.contains('ok')) c.classList.add('bad'); });
+        grid.classList.add('shake');
+        setTimeout(() => {
+          grid.classList.remove('shake');
+          w.cells.forEach((c) => { c.classList.remove('bad'); if (!c.classList.contains('ok')) setL(c, ''); });
+          select(cur, 0);
+        }, 650);
+      }
+    }
+
+    /* ------------------------------------------------------------
+       Tastiera
+       ------------------------------------------------------------ */
+    const kbd = $('#kbd');
+    const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+    ROWS.forEach((row, ri) => {
+      const r = document.createElement('div'); r.className = 'row';
+      for (const L of row) { const b = document.createElement('button'); b.className = 'key'; b.textContent = L; b.dataset.k = L; r.appendChild(b); }
+      if (ri === 2) {
+        const d = document.createElement('button'); d.className = 'key wide'; d.dataset.k = 'del'; d.setAttribute('aria-label', 'Cancella');
+        d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 20 19H9l-6-7 6-7z"/><path d="M13 10l4 4M17 10l-4 4"/></svg>';
+        r.appendChild(d);
+      }
+      kbd.appendChild(r);
+    });
+    kbd.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-k]'); if (!b) return;
+      Buber.sound.unlock();
+      b.dataset.k === 'del' ? back() : type(b.dataset.k);
+    });
+    addEventListener('keydown', (e) => {
+      if ($('#cross').classList.contains('hidden')) return;
+      if (/^[a-zA-Z]$/.test(e.key)) type(e.key.toUpperCase());
+      else if (e.key === 'Backspace') back();
+      else if (e.key === 'Tab') { e.preventDefault(); select((cur + 1) % W.length); }
+    });
+
+    function finish() {
+      Buber.complete(3);
+      Buber.sound.win(); Buber.vibrate([25, 40, 25, 40, 70]);
+      Buber.confetti({ count: 140 });
+      setTimeout(() => { $('#cross').classList.add('hidden'); $('#end').classList.remove('hidden'); }, 1000);
+    }
+  </script>
+</body>
+</html>

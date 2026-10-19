@@ -1,27 +1,391 @@
 <!doctype html>
 <html lang="it">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Bubersurprise: qualcosa di bello sta arrivando.">
-    <meta name="theme-color" content="#f8f3eb">
-    <title>Bubersurprise</title>
-    <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: #f8f3eb; color: #29233b; font-family: system-ui, sans-serif; }
-      main { width: 100%; max-width: 800px; text-align: center; }
-      .symbol { font-size: 80px; }
-      h1 { margin: 24px 0; font-size: clamp(2rem, 8vw, 5rem); letter-spacing: -0.06em; overflow-wrap: anywhere; }
-      p { margin: 0; font-size: clamp(1rem, 3vw, 1.4rem); line-height: 1.6; color: #655b75; }
-      .label { display: inline-block; margin-top: 36px; padding: 10px 18px; border: 1px solid #d6ccdf; border-radius: 999px; font-size: 0.85rem; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <div class="symbol" aria-hidden="true">🎁</div>
-      <h1>Bubersurprise</h1>
-      <p>Qualcosa di bello sta arrivando.</p>
-      <span class="label">Presto online</span>
-    </main>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Bubersurprise: qualcosa di bello sta arrivando.">
+  <meta name="theme-color" content="#f3efe6">
+  <title>Bubersurprise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css?v=7">
+  <style>
+    html, body { overflow: hidden; height: 100dvh; }
+
+    #emoji-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 5;              /* sopra il testo */
+      pointer-events: none;
+    }
+
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: max(28px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom));
+      z-index: 1;
+      touch-action: none;
+    }
+
+    /* ---------- lucchetto ---------- */
+    #lock {
+      justify-content: center;
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+      background: var(--paper);
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
+      will-change: transform, opacity;
+    }
+    #lock.dragging { transition: none; cursor: grabbing; }
+    #lock.away { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+
+    .hero { text-align: center; }
+    .gift {
+      font-size: 56px;
+      line-height: 1;
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    h1.title {
+      margin-top: 26px;
+      font-size: clamp(3rem, 14vw, 4.6rem);
+    }
+
+    .unlock {
+      position: absolute;
+      left: 0; right: 0;
+      bottom: max(36px, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; align-items: center;
+      gap: 18px;
+      color: var(--ink);
+    }
+    /* tre chevron neri che salgono uno dopo l'altro */
+    .chevs { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .chev {
+      width: 12px; height: 12px;
+      border-left: 2px solid var(--ink);
+      border-top: 2px solid var(--ink);
+      transform: rotate(45deg);
+      animation: chev 1.8s ease-in-out infinite;
+    }
+    .chev:nth-child(1) { animation-delay: 0.3s; }
+    .chev:nth-child(2) { animation-delay: 0.15s; }
+    .chev:nth-child(3) { animation-delay: 0s; }
+    @keyframes chev {
+      0%, 60%, 100% { transform: translateY(0) rotate(45deg); }
+      30%           { transform: translateY(-5px) rotate(45deg); }
+    }
+    .lockicon {
+      width: 44px; height: 44px;
+      display: grid; place-items: center;
+      color: var(--ink);
+    }
+    .lockicon svg { width: 32px; height: 32px; overflow: visible; }
+    .lockicon .shackle {
+      transform-origin: 7px 10px;
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1.2);
+    }
+    .lockicon.open .shackle { transform: translateY(-3px) rotate(-14deg); }
+
+    /* ---------- PIN ---------- */
+    .pinbox { width: min(100%, 360px); text-align: center; }
+    .pinbox h2 { font-size: 2.4rem; }
+    .pinbox .lead { margin-top: 10px; color: var(--muted); font-size: 0.95rem; }
+    .hint {
+      min-height: 1.5em;
+      margin-top: 10px;
+      color: var(--ink-soft);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.05rem;
+    }
+
+    /* celle del codice (stile campo OTP: bordo 1px, angoli stretti, ombra minima) */
+    .cells {
+      display: flex; justify-content: center; align-items: center;
+      gap: 14px;
+      margin: 30px auto 36px;
+      width: fit-content;
+    }
+    .cell {
+      position: relative;
+      width: 40px; height: 50px;
+      display: grid; place-items: center;
+      border-radius: 8px;
+      background: var(--paper-light);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 2px rgba(31, 29, 26, 0.05);
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 1.3rem;
+      color: var(--ink);
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.25s, color 0.15s;
+    }
+    .cell.active {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(31, 29, 26, 0.08);
+    }
+    /* slash tra le parti della data, centrato nello spazio: le celle restano equidistanti */
+    .cell.sep::before {
+      content: '/';
+      position: absolute;
+      left: -8px;
+      transform: translateX(-50%);
+      font-family: var(--sans);
+      font-size: 1.1rem;
+      color: var(--muted);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .cells.ok  .cell { background: var(--sage);  border-color: var(--ok); box-shadow: none; }
+    .cells.bad .cell { background: var(--blush); border-color: var(--bad); color: var(--bad); box-shadow: none; }
+
+    /* tastierino: tasti rettangolari, bordo 1px, ombra minima */
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 78px);
+      gap: 16px 18px;
+      justify-content: center;
+    }
+    .key {
+      width: 78px; height: 56px;
+      display: grid; place-items: center;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper-light);
+      color: var(--ink);
+      font: inherit;
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 1.35rem;
+      box-shadow: 0 1px 2px rgba(31, 29, 26, 0.06);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s, box-shadow 0.1s, transform 0.1s, border-color 0.1s;
+    }
+    .key:active {
+      background: var(--paper-deep);
+      border-color: #cbc3b4;
+      box-shadow: none;
+      transform: translateY(1px);
+    }
+    .key.ghost { background: transparent; border-color: transparent; box-shadow: none; cursor: default; }
+    .key.del { color: var(--ink-soft); }
+    .key.del svg { width: 24px; height: 24px; }
+
+    @media (max-height: 680px) {
+      .pad { grid-template-columns: repeat(3, 72px); gap: 12px 16px; }
+      .key { width: 72px; height: 50px; font-size: 1.25rem; }
+      .cells { margin: 22px auto 26px; }
+      .cell { width: 36px; height: 46px; font-size: 1.2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .gift, .chev { animation: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="emoji-canvas" aria-hidden="true"></canvas>
+
+  <!-- 1. lucchetto -->
+  <section id="lock" class="screen" aria-label="Schermata bloccata">
+    <div class="hero">
+      <div class="gift" aria-hidden="true">🎁</div>
+      <h1 class="title">Bubersurprise</h1>
+    </div>
+    <div class="unlock">
+      <div class="chevs" aria-hidden="true">
+        <span class="chev"></span><span class="chev"></span><span class="chev"></span>
+      </div>
+      <div class="lockicon" id="lockicon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path class="shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/>
+          <rect x="4" y="10" width="16" height="11" rx="2.5"/>
+          <circle cx="12" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. PIN -->
+  <section id="pin" class="screen hidden">
+    <div class="pinbox rise">
+      <h2>PIN</h2>
+      <p class="hint" id="hint" aria-live="polite"></p>
+      <div class="cells" id="cells" aria-label="Cifre inserite">
+        <span class="cell"></span><span class="cell"></span>
+        <span class="cell"></span><span class="cell"></span>
+      </div>
+      <div class="pad" id="pad">
+        <button class="key" data-k="1">1</button>
+        <button class="key" data-k="2">2</button>
+        <button class="key" data-k="3">3</button>
+        <button class="key" data-k="4">4</button>
+        <button class="key" data-k="5">5</button>
+        <button class="key" data-k="6">6</button>
+        <button class="key" data-k="7">7</button>
+        <button class="key" data-k="8">8</button>
+        <button class="key" data-k="9">9</button>
+        <span class="key ghost" aria-hidden="true"></span>
+        <button class="key" data-k="0">0</button>
+        <button class="key del" data-k="del" aria-label="Cancella">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 5h11a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 20 19H9l-6-7 6-7z"/>
+            <path d="M13 10l4 4M17 10l-4 4"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script src="shared.js?v=7"></script>
+  <script>
+    /* ============================================================
+       CONFIG — modifica qui
+       ============================================================ */
+    const CONFIG = {
+      pin: '2010',                   // ggmm: 20 ottobre, il suo compleanno (e di Snoop Dogg e Mara Venier)
+      // indizi che rimbalzano per lo schermo: un'emoji, il percorso di un'immagine, oppure { src, size }
+      // per le immagini `size` è l'altezza in px, la larghezza segue le proporzioni
+      emojis: [
+        { src: 'img/people/cut/snoop.webp',          size: 75 },  // Snoop con la cintura
+        { src: 'img/people/cut/snoop4.webp',         size: 75 },  // Snoop col microfono
+        { src: 'img/people/cut/snoop2.webp',         size: 75 },  // Snoop primo piano
+        { src: 'img/people/cut/mara.webp',           size: 75 },  // Mara a Venezia
+        { src: 'img/people/cut/mara-ventaglio.webp', size: 75 },  // Mara col ventaglio
+        { src: 'img/people/cut/bubi1.webp',          size: 90 },  // Bubi con i fiori
+        { src: 'img/people/cut/bubi2.webp',          size: 90 },  // Bubi con la felpa rosa
+        { src: 'img/people/cut/bubi3.webp',          size: 90 },  // Bubi con la sciarpa
+      ],
+      copies: 1,                     // quante copie di ogni elemento
+      hintAfter: 2,                  // dopo quanti errori mostrare l'aiutino
+      hint: 'Giorno e mese. Li condividi con questi due.',
+      next: '1-dolci.html',
+    };
+
+    const $ = (s) => document.querySelector(s);
+    const lock = $('#lock');
+    const lockicon = $('#lockicon');
+    const pinScreen = $('#pin');
+
+    /* ------------------------------------------------------------
+       Cose che rimbalzano (motore in shared.js) + lancio col dito
+       ------------------------------------------------------------ */
+    const Emo = Buber.bouncer($('#emoji-canvas'));
+    Emo.enableFlick();
+
+    /* ------------------------------------------------------------
+       Swipe verso l'alto per sbloccare
+       ------------------------------------------------------------ */
+    (() => {
+      let startY = null, dy = 0, unlocked = false;
+      const threshold = () => Math.min(170, innerHeight * 0.28);
+
+      lock.addEventListener('pointerdown', (e) => {
+        if (unlocked) return;
+        startY = e.clientY; dy = 0;
+        lock.classList.add('dragging');
+        lock.setPointerCapture(e.pointerId);
+      });
+      lock.addEventListener('pointermove', (e) => {
+        if (startY === null) return;
+        dy = Math.max(0, startY - e.clientY);
+        const t = Math.min(1, dy / threshold());
+        lock.style.transform = `translateY(${-dy}px)`;
+        lockicon.classList.toggle('open', t >= 1);
+      });
+      const end = () => {
+        if (startY === null) return;
+        lock.classList.remove('dragging');
+        const ok = dy >= threshold();
+        startY = null;
+        lock.style.transform = ''; lock.style.opacity = '';
+        if (ok) unlock(); else lockicon.classList.remove('open');
+      };
+      lock.addEventListener('pointerup', end);
+      lock.addEventListener('pointercancel', end);
+
+      addEventListener('keydown', (e) => {
+        if (!unlocked && (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter')) unlock();
+      });
+
+      function unlock() {
+        if (unlocked) return;
+        unlocked = true;
+        lockicon.classList.add('open');
+        Buber.vibrate(20);
+        const r = lockicon.getBoundingClientRect();
+        setTimeout(() => {
+          lock.classList.add('away');
+          Emo.burst(CONFIG.emojis, r.left + r.width / 2, r.top + r.height / 2, { copies: CONFIG.copies });
+        }, 180);
+        setTimeout(() => {
+          pinScreen.classList.remove('hidden');
+        }, 620);
+      }
+    })();
+
+    /* ------------------------------------------------------------
+       Tastierino PIN
+       ------------------------------------------------------------ */
+    (() => {
+      const cells = [...document.querySelectorAll('#cells .cell')];
+      const cellsBox = $('#cells');
+      const box = document.querySelector('.pinbox');
+      const hint = $('#hint');
+      let code = '', attempts = 0, locked = false;
+      cells[0].classList.add('active');
+
+      const PIN = String(CONFIG.pin).replace(/\D/g, '');
+      const render = () => cells.forEach((c, i) => { c.textContent = code[i] || ''; c.classList.toggle('active', i === code.length); });
+
+      function press(k) {
+        if (locked) return;
+        if (k === 'del') { code = code.slice(0, -1); render(); return; }
+        if (code.length >= PIN.length) return;
+        code += k; render();
+        Buber.vibrate(6);
+        if (code.length === PIN.length) setTimeout(check, 140);
+      }
+
+      function check() {
+        locked = true;
+        if (code === PIN) {
+          cellsBox.classList.add('ok');
+          Buber.vibrate([25, 40, 25, 40, 70]);
+          Buber.complete(1);
+          const r = cellsBox.getBoundingClientRect();
+          Buber.confetti({ count: 120, origin: { x: r.left + r.width / 2, y: r.top + r.height / 2 } });
+          setTimeout(() => { location.href = CONFIG.next; }, 1300);
+        } else {
+          attempts++;
+          cellsBox.classList.add('bad');
+          cellsBox.classList.add('shake');
+          Buber.vibrate([50, 40, 50]);
+          if (attempts >= CONFIG.hintAfter) hint.textContent = CONFIG.hint;
+          setTimeout(() => {
+            cellsBox.classList.remove('bad', 'shake');
+            code = ''; render(); locked = false;
+          }, 600);
+        }
+      }
+
+      $('#pad').addEventListener('click', (e) => {
+        if (Emo.justFlicked()) return;
+        const b = e.target.closest('button[data-k]');
+        if (b) press(b.dataset.k);
+      });
+      addEventListener('keydown', (e) => {
+        if (pinScreen.classList.contains('hidden')) return;
+        if (/^\d$/.test(e.key)) press(e.key);
+        if (e.key === 'Backspace') press('del');
+      });
+    })();
+  </script>
+</body>
 </html>

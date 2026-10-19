@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3efe6">
+  <title>Bubersurprise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css?v=7">
+  <style>
+    html, body { overflow: hidden; height: 100dvh; }
+    body { transition: background 0.25s; }
+    body.flash { background: var(--blush); }
+
+    #canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    /* domanda in sovrimpressione, in alto */
+    .ask {
+      position: fixed;
+      left: 0; right: 0;
+      top: max(28px, env(safe-area-inset-top));
+      padding: 0 24px;
+      text-align: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .ask h1 {
+      font-size: clamp(1.9rem, 8.5vw, 2.6rem);
+      line-height: 1.1;
+      max-width: 22ch;
+      margin: 0 auto;
+    }
+    .target {
+      display: block;
+      margin-top: 14px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.5rem, 7vw, 2.1rem);
+      line-height: 1.2;
+      color: var(--ink);
+      transition: transform 0.2s, opacity 0.2s, color 0.3s;
+    }
+    .target.swap { transform: translateY(6px); opacity: 0; }
+
+    /* avanzamento: un pallino per tipo */
+    .steps {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: max(28px, env(safe-area-inset-bottom));
+      display: flex; justify-content: center; gap: 10px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .steps span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(31, 29, 26, 0.14);
+      transition: background 0.3s, transform 0.3s;
+    }
+    .steps span.now { transform: scale(1.3); background: var(--ink); }
+    .steps span.done { background: var(--ok); }
+
+    /* fine */
+    #end {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px;
+      text-align: center;
+      z-index: 2;
+    }
+    #end h2 { font-size: clamp(2rem, 9vw, 2.6rem); max-width: 16ch; margin: 0 auto; overflow-wrap: anywhere; }
+    #end p { margin: 12px 0 30px; color: var(--muted); max-width: 28ch; }
+    .choices { display: flex; gap: 14px; justify-content: center; margin-top: 30px; }
+    .choices .btn { min-width: 120px; }
+    #end.photos .choices { display: none; }
+    #end.photos h2 { color: var(--muted); }
+    #after {
+      position: fixed; left: 0; right: 0;
+      bottom: max(28px, env(safe-area-inset-bottom));
+      display: flex; justify-content: center;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" aria-hidden="true"></canvas>
+
+  <header class="ask">
+    <h1 id="question">Ma ti andrebbe un altro tipo di dolce?</h1>
+    <p class="target" id="target">…</p>
+  </header>
+
+  <div class="steps" id="steps" aria-hidden="true"></div>
+
+  <section id="end" class="hidden">
+    <div class="rise">
+      <h2 id="end-title">Ma hai avuto il dolce che volevi?</h2>
+      <div class="choices">
+        <button class="btn ghost" id="yes">Sì</button>
+        <button class="btn" id="no">No</button>
+      </div>
+    </div>
+  </section>
+  <div id="after" class="hidden"><a class="btn rise" id="next" href="#">Avanti</a></div>
+
+  <script src="shared.js?v=7"></script>
+  <script>
+    Buber.requireStep(2);
+
+    /* ============================================================
+       CONFIG — modifica qui
+       ============================================================ */
+    const CONFIG = {
+      question: 'Ma ti andrebbe un altro tipo di dolce?',
+      // in ordine di eliminazione; `label` è la frase che compare sotto la domanda
+      sweets: [
+        { label: 'Forse le ciambelle?',  src: 'img/emoji/twemoji/1f369.svg', color: '#c0706a' },
+        { label: 'Magari i biscotti?',   src: 'img/emoji/twemoji/1f36a.svg', color: '#a88a2e' },
+        { label: 'O un gelato?',         src: 'img/emoji/twemoji/1f366.svg', color: '#5a86a3' },
+        { label: 'Una torta, allora?',   src: 'img/emoji/twemoji/1f370.svg', color: '#7b6fb0' },
+      ],
+      copies: 3,          // copie di ogni dolce
+      size: 60,           // px
+      endQuestion: 'Ma hai avuto il dolce che volevi?',
+      maxSure: 20,                 // dopo quanti "Sì" il bottone esplode
+      endAfterBoom: 'Appunto.',    // frase dopo l'esplosione del Sì
+      endAhEcco: 'Ah ecco…',       // resta sullo sfondo mentre le foto rimbalzano
+      // le foto che compaiono dopo il "No": si toccano e scoppiano in coriandoli
+      photos: [
+        { src: 'img/people/cut/gere1.webp', size: 120 },  // in piedi, maglietta nera
+        { src: 'img/people/cut/gere2.webp', size: 120 },  // bacio
+        { src: 'img/people/cut/gere3.webp', size: 120 },  // linguaccia
+      ],
+      next: '2-podcast.html',
+    };
+
+    const $ = (s) => document.querySelector(s);
+    $('#question').textContent = CONFIG.question;
+    $('#end-title').textContent = CONFIG.endQuestion;
+    $('#next').href = CONFIG.next;
+
+    const Emo = Buber.bouncer($('#canvas'), { damp: 0.9, minSpeed: 30 });
+    const steps = $('#steps');
+    CONFIG.sweets.forEach(() => steps.appendChild(document.createElement('span')));
+    const stepDots = [...steps.children];
+
+    let current = 0;        // indice del dolce da eliminare
+    let busy = false;       // durante lo scambio di bersaglio
+
+    /* mostra il bersaglio corrente: frase colorata */
+    function showTarget(animate = true) {
+      const sw = CONFIG.sweets[current];
+      const t = $('#target');
+      const apply = () => { t.textContent = sw.label; t.style.color = sw.color; t.classList.remove('swap'); };
+      stepDots.forEach((d, i) => { d.classList.toggle('now', i === current); d.classList.toggle('done', i < current); });
+      if (!animate) return apply();
+      t.classList.add('swap');
+      setTimeout(apply, 200);
+    }
+
+    /* avvio: la domanda appare, poi i dolci schizzano dal basso */
+    setTimeout(() => {
+      const items = CONFIG.sweets.map((s, i) => ({ src: s.src, size: CONFIG.size, kind: i }));
+      Emo.burst(items, innerWidth / 2, innerHeight + 20, { copies: CONFIG.copies, speed: 1000, spread: 700 });
+      showTarget(false);
+    }, 500);
+
+    /* tocco su un dolce */
+    addEventListener('pointerdown', (e) => {
+      Buber.sound.unlock();
+      if (busy) return;
+      const p = Emo.hit(e.clientX, e.clientY);
+      if (!p) return;
+      e.preventDefault();
+
+      if (p.kind === 'photo') {              // le foto scoppiano in coriandoli
+        Emo.remove(p);
+        Buber.explode({ x: p.x, y: p.y, size: 0.8 });
+        if (!Emo.parts.some((q) => q.dying == null && q.kind === 'photo')) setTimeout(done, 500);
+        return;
+      }
+      if (phase !== 'game') return;
+
+      if (p.kind === current) {
+        Emo.remove(p);
+        Buber.sound.pop();
+        Buber.vibrate(12);
+        const left = Emo.parts.filter((q) => q.dying == null && q.kind === current).length;
+        if (left > 0) return;
+        // tipo finito → prossimo
+        current++;
+        if (current < CONFIG.sweets.length) {
+          busy = true;
+          showTarget();
+          setTimeout(() => { busy = false; }, 350);
+        } else {
+          finish();
+        }
+      } else {
+        Buber.sound.error();
+        Buber.vibrate([60, 40, 60]);
+        Emo.kick(p);
+        document.body.classList.add('flash');
+        const t = $('#target'); t.classList.add('shake');
+        setTimeout(() => { document.body.classList.remove('flash'); t.classList.remove('shake'); }, 400);
+      }
+    }, { passive: false });
+
+    let phase = 'game';   // game → ask → photos → done
+
+    function finish() {
+      phase = 'ask';
+      Buber.sound.win();
+      Buber.vibrate([25, 40, 25, 40, 70]);
+      Buber.confetti({ count: 140 });
+      stepDots.forEach((d) => { d.classList.add('done'); d.classList.remove('now'); });
+      setTimeout(() => {
+        $('.ask').classList.add('hidden');
+        $('#steps').classList.add('hidden');
+        $('#end').classList.remove('hidden');
+      }, 900);
+    }
+
+    /* "Sì": ogni volta un "sicura" in più; al ventesimo il bottone esplode e resta solo il No */
+    let sure = 0;
+    $('#yes').addEventListener('click', (e) => {
+      if (phase !== 'ask') return;
+      sure++;
+      const h = $('#end-title');
+      h.textContent = 'Sicura' + ' sicura'.repeat(sure - 1) + '?';
+      h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake');
+      Buber.vibrate(30);
+      if (sure >= CONFIG.maxSure) {
+        const b = e.currentTarget, r = b.getBoundingClientRect();
+        Buber.explode({ x: r.left + r.width / 2, y: r.top + r.height / 2, size: 1.3 });
+        b.style.transition = 'transform 0.25s, opacity 0.25s';
+        b.style.transform = 'scale(1.6)'; b.style.opacity = '0'; b.style.pointerEvents = 'none';
+        setTimeout(() => { b.remove(); h.textContent = CONFIG.endAfterBoom; }, 260);
+      }
+    });
+    $('#no').addEventListener('click', showPhotos);
+
+    function showPhotos() {
+      if (phase !== 'ask') return;
+      phase = 'photos';
+      $('#end').classList.add('photos');
+      $('#end-title').textContent = CONFIG.endAhEcco;
+      if (!CONFIG.photos.length) return done();
+      const items = CONFIG.photos.map((p) => ({ ...p, kind: 'photo' }));
+      Emo.burst(items, innerWidth / 2, innerHeight + 40, { copies: 1, speed: 1000, spread: 600 });
+    }
+
+    function done() {
+      if (phase === 'done') return;
+      phase = 'done';
+      Buber.complete(2);
+      Buber.sound.win();
+      $('#after').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
