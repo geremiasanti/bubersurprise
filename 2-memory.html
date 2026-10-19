@@ -32,7 +32,7 @@
     }
     .card {
       position: relative;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 1 / 1;
       cursor: pointer;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -64,12 +64,11 @@
       transform: rotateY(180deg);
       background: var(--paper-light);
       box-shadow: 0 1px 2px rgba(31, 29, 26, 0.05);
-      padding: 8px;
-      transition: background 0.3s, border-color 0.3s;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
-    .front img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-    .card.done .front { background: var(--sage); border-color: var(--ok); }
-    .card.wrong .front { background: var(--blush); border-color: var(--bad); }
+    .front img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .card.done .front  { border-color: var(--ok);  box-shadow: 0 0 0 3px var(--sage); }
+    .card.wrong .front { border-color: var(--bad); box-shadow: 0 0 0 3px var(--blush); }
     .card.done { cursor: default; }
 
     #end { text-align: center; }
@@ -103,10 +102,10 @@
     const CONFIG = {
       title: 'Memory',
       // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare.
-      // SEGNAPOSTO: i ritagli già presenti, da sostituire con le immagini vere (8 coppie per la griglia 4×4).
+      // Le immagini sono quadrate (img/memory/, 600×600). SEGNAPOSTO sotto, da sostituire con le 6 immagini vere.
       images: [
-        ['img/people/cut/gere-chitarra.webp', 'img/people/cut/bubi-mic1.webp'],  // tu con la chitarra + lei con l'ukulele
-        // ['img/people/cut/jon.webp', 'img/people/cut/ygritte.webp'],         // Jon Snow + Ygritte (in arrivo)
+        ['img/memory/chitarra.webp', 'img/memory/ukulele.webp'],   // tu con la chitarra + lei con l'ukulele
+        // ['img/memory/jon.webp', 'img/memory/ygritte.webp'],   // Jon Snow + Ygritte (in arrivo)
         // --- segnaposto, da sostituire con le 6 immagini vere ---
         'img/people/cut/bubi1.webp',
         'img/people/cut/bubi2.webp',
