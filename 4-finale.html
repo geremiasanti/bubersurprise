@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shared.css?v=10">
+  <link rel="stylesheet" href="shared.css?v=11">
   <style>
     html, body { overflow: hidden; height: 100dvh; }
 
@@ -57,10 +57,29 @@
     .veil h1 { font-size: clamp(2.3rem, 11vw, 3.4rem); line-height: 1.05; }
     .veil h1 .heart { color: var(--bad); }
 
+    .sound {
+      position: fixed; z-index: 2;
+      top: max(16px, env(safe-area-inset-top)); right: 16px;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--paper-light);
+      color: var(--ink-soft);
+      font: inherit; font-size: 0.8rem;
+      cursor: pointer;
+      animation: rise-in 0.4s both;
+    }
+    .sound svg { width: 16px; height: 16px; }
   </style>
 </head>
 <body>
   <div class="rows" id="rows" aria-hidden="true"></div>
+
+  <button class="sound hidden" id="sound" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>
+    attiva la musica
+  </button>
 
   <div class="center">
     <div class="veil rise">
@@ -68,7 +87,7 @@
     </div>
   </div>
 
-  <script src="shared.js?v=10"></script>
+  <script src="shared.js?v=11"></script>
   <script>
     Buber.requireStep(5);
 
@@ -77,6 +96,7 @@
        ============================================================ */
     const CONFIG = {
       title: 'Buon compleanno Bubi',     // il <3 è aggiunto dopo
+      music: 'media/robina.mp3',         // sottofondo in loop
       rows: 2,                           // una fascia sopra il testo, una sotto
       speeds: [26, -22],                 // px/s per fascia (negativo = verso destra)
       photos: [
@@ -159,6 +179,20 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+
+    /* --- musica di sottofondo: prova subito, se il browser blocca parte al primo tocco o col chip --- */
+    (() => {
+      if (!CONFIG.music) return;
+      const song = new Audio(CONFIG.music); song.loop = true; song.preload = 'auto'; song.volume = 0.9;
+      const btn = $('#sound');
+      const start = () => song.play().then(() => btn.classList.add('hidden')).catch(() => btn.classList.remove('hidden'));
+      song.play().then(() => btn.classList.add('hidden')).catch(() => {
+        btn.classList.remove('hidden');
+        const once = () => { start(); removeEventListener('pointerdown', once, true); };
+        addEventListener('pointerdown', once, true);
+      });
+      btn.addEventListener('click', start);
+    })();
 
     Buber.confetti({ count: 160 });
   </script>
