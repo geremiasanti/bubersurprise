@@ -87,13 +87,13 @@
       background: var(--paper-light);
       border: 1px solid var(--line);
       box-shadow: 0 1px 2px rgba(31, 29, 26, 0.05);
-      font-family: var(--sans); font-weight: 500; font-size: 1.25rem;
+      font-family: var(--sans); font-weight: 500; font-size: inherit;
       color: var(--ink);
       cursor: pointer;
       user-select: none;
       transition: background 0.2s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
     }
-    .cell .num { position: absolute; top: 2px; left: 4px; font-size: 0.55rem; color: var(--muted); font-weight: 500; }
+    .cell .num { position: absolute; top: 1px; left: 3px; font-size: 0.5rem; line-height: 1; color: var(--muted); font-weight: 500; }
     .cell.word { background: #fbf9f4; border-color: #cfc8e6; box-shadow: 0 0 0 2px rgba(207, 200, 230, 0.45); }
     .cell.cur  { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(31, 29, 26, 0.08); }
     .cell.ok   { background: var(--sage); border-color: var(--ok); box-shadow: none; }
@@ -125,7 +125,7 @@
     #end h2 { font-size: clamp(2rem, 9vw, 2.6rem); max-width: 16ch; }
     #end p { margin: 12px 0 30px; color: var(--muted); max-width: 28ch; }
 
-    @media (max-height: 700px) { .grid { --cell: 38px; } .key { height: 42px; } .mid { gap: 18px; } }
+    @media (max-height: 700px) { .key { height: 42px; } .mid { gap: 18px; } }
   </style>
 </head>
 <body>
@@ -139,7 +139,7 @@
     </button>
     <div class="veil">
       <div class="pics" id="pics"></div>
-      <h1 id="intro-title">Se avessi un podcast, parleresti di…</h1>
+      <h1 id="intro-title">Se avessi un podcast, le tue rubriche sarebbero…</h1>
       <p class="lead" id="intro-lead"></p>
       <button class="btn" id="go">Mmhhhh vediamo…</button>
     </div>
@@ -181,17 +181,17 @@
           { src: 'media/podcast-2.mp4', pos: 'tr' },
           { src: 'media/ukulele.mp4',   pos: 'bottom', sound: true },
         ],
-        title: 'Se avessi un podcast, parleresti di…',
+        title: 'Se avessi un podcast, le tue rubriche sarebbero…',
         lead: '',                            // riga sotto il titolo (vuota = nascosta)
         button: 'Mmhhhh vediamo…',
       },
       // parole: posizione (riga, colonna, da 0) e direzione 'a' = orizzontale, 'g' = verticale.
-      // SEGNAPOSTO: da sostituire con le vostre.
+      // Griglia 4 righe × 10 colonne: FEMMINISMO è la spina dorsale, GOT e ASMR la incrociano, XBARRA incrocia ASMR.
       words: [
-        { clue: 'Quello della prima sera, che poi ti ha fatto stare male.', answer: 'SUSHI',  row: 0, col: 0, dir: 'a' },
-        { clue: 'Arancione, in bicchiere basso.',                           answer: 'SPRITZ', row: 0, col: 0, dir: 'g' },
-        { clue: 'Ce l’avevi sulle spalle e la faceva ridere.',       answer: 'ZAINO',  row: 5, col: 0, dir: 'a' },
-        { clue: 'Il nome di chi sta giocando.',                            answer: 'BUBI',   row: 2, col: 2, dir: 'g' },
+        { clue: 'Serie, muoiono tutti.',                                  answer: 'GOT',        row: 0, col: 9, dir: 'g' },
+        { clue: 'Sussurri e fruscii che ti rilassano.',                    answer: 'ASMR',       row: 0, col: 7, dir: 'g' },
+        { clue: 'Difficile da spiegare. Però quanti alberi hai disegnato.', answer: 'XBARRA',    row: 3, col: 3, dir: 'a' },
+        { clue: 'Di questo tocca parlare per forza.',                      answer: 'FEMMINISMO', row: 1, col: 0, dir: 'a' },
       ],
       endTitle: 'Un podcast così lo ascolterei.',
       endMsg: 'Puntata uno, quando vuoi.',
@@ -279,6 +279,12 @@
     }
     const grid = $('#grid');
     grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
+    const fitCells = () => {
+      const gap = 6, cell = Math.max(26, Math.min(44, Math.floor((innerWidth - 40 - (cols - 1) * gap) / cols)));
+      grid.style.setProperty('--cell', cell + 'px');
+      grid.style.fontSize = (cell / 44 * 1.25).toFixed(2) + 'rem';
+    };
+    fitCells(); addEventListener('resize', fitCells);
     // numerazione come nei cruciverba: in ordine di lettura delle caselle iniziali
     const numAt = new Map();
     W.forEach((w, i) => { w.num = i + 1; const k = key(w.row, w.col); if (!numAt.has(k)) numAt.set(k, w.num); });
