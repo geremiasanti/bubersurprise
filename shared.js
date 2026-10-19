@@ -57,7 +57,7 @@ const Buber = (() => {
 
     let last = performance.now();
     function frame(now) {
-      const dt = Math.min((now - last) / 1000, 0.033);
+      const dt = Math.max(0, Math.min((now - last) / 1000, 0.033));
       last = now;
       ctx.clearRect(0, 0, W, H);
       let alive = 0;
@@ -162,7 +162,7 @@ Buber.bouncer = function (canvas, opts = {}) {
   }
 
   function frame(now) {
-    const dt = Math.min((now - last) / 1000, 0.033);
+    const dt = Math.max(0, Math.min((now - last) / 1000, 0.033));
     last = now;
     ctx.clearRect(0, 0, W, H);
     const k = Math.exp(-DAMP * dt);
@@ -365,12 +365,12 @@ Buber.explode = function ({ x, y, size = 1, word = null } = {}) {
       if (s.t > s.life) continue; alive++;
       const k = s.t / s.life;
       ctx.fillStyle = `rgba(${s.g},${s.g},${s.g},${0.55 * (1 - k)})`;
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s.x, s.y, Math.max(0, s.r), 0, Math.PI * 2); ctx.fill();
     }
     for (const f of fire) {
       if (f.t > f.life) continue; alive++;
       const k = f.t / f.life;
-      const r = f.r * (0.6 + k * 0.9);
+      const r = Math.max(0, f.r * (0.6 + k * 0.9));
       const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
       grad.addColorStop(0, `hsla(${f.hue + 20},100%,${80 - k * 30}%,${1 - k})`);
       grad.addColorStop(0.5, `hsla(${f.hue},100%,50%,${0.9 * (1 - k)})`);
@@ -401,7 +401,7 @@ Buber.explode = function ({ x, y, size = 1, word = null } = {}) {
     return alive;
   }
   function frame(now) {
-    const dt = Math.min((now - last) / 1000, 0.033); last = now;
+    const dt = Math.max(0, Math.min((now - last) / 1000, 0.033)); last = now;
     step(dt);
     const alive = render();
     if (alive > 0 || T < 1) requestAnimationFrame(frame); else canvas.remove();
