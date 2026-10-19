@@ -20,10 +20,6 @@
       z-index: 1;
     }
 
-    .top { text-align: center; }
-    .top h1 { font-size: clamp(1.8rem, 8vw, 2.3rem); max-width: 18ch; }
-    .top p { margin-top: 8px; color: var(--muted); font-size: 0.95rem; }
-
     .board {
       display: grid;
       gap: 10px;
@@ -78,10 +74,6 @@
 <body>
 
   <section id="game" class="screen">
-    <div class="top">
-      <h1 id="title">Memory</h1>
-      <p id="count"></p>
-    </div>
     <div class="board" id="board" aria-label="Memory"></div>
   </section>
 
@@ -100,14 +92,12 @@
        CONFIG — modifica qui
        ============================================================ */
     const CONFIG = {
-      title: 'Memory',
       // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare.
       // Le immagini sono quadrate (img/memory/, 600×600). SEGNAPOSTO sotto, da sostituire con le 6 immagini vere.
       images: [
         ['img/memory/chitarra.webp', 'img/memory/ukulele.webp'],   // tu con la chitarra + lei con l'ukulele
-        // ['img/memory/jon.webp', 'img/memory/ygritte.webp'],   // Jon Snow + Ygritte (in arrivo)
+        ['img/memory/jon.webp', 'img/memory/ygritte.webp'],       // Jon Snow + Ygritte
         // --- segnaposto, da sostituire con le 6 immagini vere ---
-        'img/people/cut/bubi1.webp',
         'img/people/cut/bubi2.webp',
         'img/people/cut/bubi3.webp',
         'img/people/cut/gere1.webp',
@@ -116,13 +106,11 @@
         'img/people/cut/snoop2.webp',
       ],
       cols: 4,                 // colonne della griglia (4 → 4 righe con 8 coppie; 3 → 4 righe con 6 coppie)
-      count: (found, total) => `${found} / ${total} coppie`,
       endTitle: 'Tutte le coppie.',
       next: '3-dolci.html',
     };
 
     const $ = (s) => document.querySelector(s);
-    $('#title').textContent = CONFIG.title;
     $('#end-title').textContent = CONFIG.endTitle;
     $('#next').href = CONFIG.next;
 
@@ -142,8 +130,6 @@
 
     let open = [], lock = false, found = 0;
     const total = CONFIG.images.length;
-    const paintCount = () => { $('#count').textContent = CONFIG.count(found, total); };
-    paintCount();
 
     board.addEventListener('click', (e) => {
       const c = e.target.closest('.card');
@@ -160,7 +146,7 @@
         setTimeout(() => {
           a.classList.replace('open', 'done'); b.classList.replace('open', 'done');
           Buber.sound.pop(); Buber.vibrate([15, 30, 15]);
-          found++; paintCount();
+          found++;
           open = []; lock = false;
           if (found === total) finish();
         }, 350);
