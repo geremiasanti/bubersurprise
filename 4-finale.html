@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shared.css?v=9">
+  <link rel="stylesheet" href="shared.css?v=10">
   <style>
     html, body { overflow: hidden; height: 100dvh; }
 
@@ -37,11 +37,6 @@
       transform: translateY(var(--dy, 0)) rotate(var(--rot, 0));
     }
     .item img, .item video { display: block; height: 100%; width: auto; object-fit: cover; }
-    .item.loud::after {
-      content: ''; position: absolute; inset: 0;
-      border-radius: 12px; box-shadow: inset 0 0 0 2px rgba(243, 239, 230, 0.9);
-      pointer-events: none;
-    }
 
     /* scritta al centro */
     .center {
@@ -62,29 +57,10 @@
     .veil h1 { font-size: clamp(2.3rem, 11vw, 3.4rem); line-height: 1.05; }
     .veil h1 .heart { color: var(--bad); }
 
-    .sound {
-      position: fixed; z-index: 2;
-      top: max(16px, env(safe-area-inset-top)); right: 16px;
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--paper-light);
-      color: var(--ink-soft);
-      font: inherit; font-size: 0.8rem;
-      cursor: pointer;
-      animation: rise-in 0.4s both;
-    }
-    .sound svg { width: 16px; height: 16px; }
   </style>
 </head>
 <body>
   <div class="rows" id="rows" aria-hidden="true"></div>
-
-  <button class="sound hidden" id="sound" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>
-    attiva l'audio
-  </button>
 
   <div class="center">
     <div class="veil rise">
@@ -92,7 +68,7 @@
     </div>
   </div>
 
-  <script src="shared.js?v=9"></script>
+  <script src="shared.js?v=10"></script>
   <script>
     Buber.requireStep(5);
 
@@ -110,15 +86,10 @@
         'img/finale/f06.webp', 'img/finale/f07.webp', 'img/finale/f08.webp', 'img/finale/f09.webp', 'img/finale/f10.webp',
         'img/finale/f11.webp', 'img/finale/f13.webp', 'img/finale/f14.webp', 'img/finale/f15.webp', 'img/finale/f16.webp',
       ],
-      // audio: true = ha una traccia audio che può partire quando passa al centro
+      // tutti muti, in loop
       videos: [
-        { src: 'media/ukulele.mp4',     audio: true },
-        { src: 'media/bagno.mp4',       audio: true },
-        { src: 'media/primo-piano.mp4', audio: true },
-        { src: 'media/carte.mp4',       audio: true },
-        { src: 'media/bosco.mp4',       audio: true },
-        { src: 'media/podcast-1.mp4',   audio: false },
-        { src: 'media/podcast-2.mp4',   audio: false },
+        'media/ukulele.mp4', 'media/bagno.mp4', 'media/primo-piano.mp4', 'media/carte.mp4',
+        'media/bosco.mp4', 'media/podcast-1.mp4', 'media/podcast-2.mp4',
       ],
     };
 
@@ -128,7 +99,7 @@
     /* --- distribuzione: foto e video mescolati, divisi tra le fasce --- */
     const rnd = (a, b) => a + Math.random() * (b - a);
     const shuffle = (arr) => { for (let i = arr.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-    const media = shuffle([...CONFIG.photos.map((src) => ({ src, type: 'img' })), ...CONFIG.videos.map((v) => ({ ...v, type: 'video' }))]);
+    const media = shuffle([...CONFIG.photos.map((src) => ({ src, type: 'img' })), ...CONFIG.videos.map((src) => ({ src, type: 'video' }))]);
     const perRow = Array.from({ length: CONFIG.rows }, () => []);
     media.forEach((m, i) => perRow[i % CONFIG.rows].push(m));
 
@@ -150,7 +121,6 @@
             el = document.createElement('video');
             el.src = m.src; el.loop = true; el.muted = true; el.playsInline = true; el.preload = 'auto';
             el.setAttribute('playsinline', ''); el.setAttribute('muted', '');
-            it.dataset.audio = m.audio ? '1' : '';
           }
           it.appendChild(el); track.appendChild(it);
         });
@@ -159,9 +129,9 @@
       rows.push({ track, x: 0, speed: CONFIG.speeds[ri % CONFIG.speeds.length], half: 0 });
     });
 
-    /* --- scorrimento continuo + gestione video (play solo se visibili, audio a quello più al centro) --- */
+    /* --- scorrimento continuo + video in play solo se visibili --- */
     const vids = [...document.querySelectorAll('.item video')];
-    let loud = null, audioOk = false, last = performance.now();
+    let last = performance.now();
     const measure = () => rows.forEach((r) => { r.half = r.track.scrollWidth / 2; });
     addEventListener('resize', measure);
     // misura quando le immagini hanno dimensioni
@@ -171,7 +141,7 @@
 
     function frame(now) {
       const dt = Math.min((now - last) / 1000, 0.05); last = now;
-      const W = innerWidth, H = innerHeight;
+      const W = innerWidth;
       for (const r of rows) {
         if (!r.half) continue;
         r.x -= r.speed * dt;
@@ -180,52 +150,15 @@
         r.track.style.transform = `translateX(${r.x}px)`;
       }
       // video: in play solo quelli sullo schermo
-      let best = null, bestD = Infinity;
       for (const v of vids) {
         const b = v.getBoundingClientRect();
         const visible = b.right > -40 && b.left < W + 40;
         if (visible) { if (v.paused) v.play().catch(() => {}); }
         else if (!v.paused) v.pause();
-        if (visible && v.parentElement.dataset.audio) {
-          const d = Math.hypot((b.left + b.right) / 2 - W / 2, (b.top + b.bottom) / 2 - H / 2);
-          if (d < bestD) { bestD = d; best = v; }
-        }
-      }
-      // audio al video più vicino al centro (solo se abbastanza vicino)
-      const target = bestD < W * 0.45 ? best : null;
-      if (target !== loud) {
-        if (loud) { loud.muted = true; loud.parentElement.classList.remove('loud'); }
-        loud = target;
-        if (loud && audioOk) { loud.muted = false; loud.parentElement.classList.add('loud'); loud.play().catch(() => {}); }
       }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
-
-    /* --- sblocco audio: prova subito, altrimenti al primo tocco o col chip --- */
-    const btn = $('#sound');
-    function enableAudio() {
-      audioOk = true;
-      btn.classList.add('hidden');
-      if (loud) { loud.muted = false; loud.parentElement.classList.add('loud'); loud.play().catch(() => {}); }
-    }
-    (async () => {
-      const probe = vids.find((v) => v.parentElement.dataset.audio);
-      if (!probe) return;
-      try {
-        probe.muted = false;
-        await probe.play();
-        if (probe.muted) throw 0;
-        probe.muted = true;          // tocca al ciclo decidere chi suona
-        enableAudio();
-      } catch (_) {
-        probe.muted = true; probe.play().catch(() => {});
-        btn.classList.remove('hidden');
-        const once = () => { enableAudio(); removeEventListener('pointerdown', once, true); };
-        addEventListener('pointerdown', once, true);
-      }
-    })();
-    btn.addEventListener('click', enableAudio);
 
     Buber.confetti({ count: 160 });
   </script>

@@ -274,6 +274,7 @@ Buber.sound = (() => {
     } catch (_) {}
   }
   return {
+    ctx,                                                                   // contesto condiviso (per la sigla)
     unlock() { try { ctx().resume(); } catch (_) {} },                    // da chiamare al primo tocco
     pop()   { tone({ f: 600, to: 1100, dur: 0.09, gain: 0.2 }); },
     error() { tone({ f: 180, to: 120, type: 'square', dur: 0.22, gain: 0.12 }); tone({ f: 180, to: 120, type: 'square', dur: 0.22, gain: 0.12, at: 0.26 }); },
@@ -424,11 +425,12 @@ Buber.sound.got = function () {
   const lens = [3, 3, 1, 1];                        // lunga, lunga, breve, breve (in crome)
   const total = bars.length * 8 * E;
   try {
-    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const ac = Buber.sound.ctx();            // stesso contesto degli altri suoni, già sbloccato dal tocco
+    if (ac.state !== 'running') ac.resume().catch(() => {});
     const t0 = ac.currentTime + 0.05;
-    const master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
-    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 0.8; lp.connect(master);
-    const note = (f, at, dur, { type = 'sawtooth', gain = 0.22, oct = 1 } = {}) => {
+    const master = ac.createGain(); master.gain.value = 1.2; master.connect(ac.destination);
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800; lp.Q.value = 0.8; lp.connect(master);
+    const note = (f, at, dur, { type = 'sawtooth', gain = 0.32, oct = 1 } = {}) => {
       const o = ac.createOscillator(), g = ac.createGain();
       o.type = type; o.frequency.value = f * oct;
       g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(gain, at + 0.03);
@@ -439,9 +441,9 @@ Buber.sound.got = function () {
     bars.forEach((bar) => {
       // melodia (violoncello): lunga lunga breve breve
       let tb = t;
-      bar.forEach((n, i) => { const d = lens[i] * E; note(N[n], tb, d * 0.95); note(N[n], tb, d * 0.95, { type: 'sine', gain: 0.18, oct: 0.5 }); tb += d; });
+      bar.forEach((n, i) => { const d = lens[i] * E; note(N[n], tb, d * 0.95); note(N[n], tb, d * 0.95, { type: 'sine', gain: 0.28, oct: 0.5 }); tb += d; });
       // ostinato di crome un'ottava sopra, piano
-      for (let i = 0; i < 8; i++) note(N[bar[i % 4]], t + i * E, E * 0.8, { type: 'triangle', gain: 0.06, oct: 2 });
+      for (let i = 0; i < 8; i++) note(N[bar[i % 4]], t + i * E, E * 0.8, { type: 'triangle', gain: 0.09, oct: 2 });
       t += 8 * E;
     });
   } catch (_) {}
