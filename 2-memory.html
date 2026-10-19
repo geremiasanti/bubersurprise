@@ -95,26 +95,29 @@
 
   <script src="shared.js?v=7"></script>
   <script>
-    Buber.requireStep(4);
+    Buber.requireStep(3);
 
     /* ============================================================
        CONFIG — modifica qui
        ============================================================ */
     const CONFIG = {
       title: 'Memory',
-      // un'immagine per coppia. SEGNAPOSTO: i ritagli già presenti, da sostituire con le immagini vere.
+      // una voce per coppia: una stringa = stessa immagine due volte; una coppia [a, b] = due immagini diverse da accoppiare.
+      // SEGNAPOSTO: i ritagli già presenti, da sostituire con le immagini vere (8 coppie per la griglia 4×4).
       images: [
         'img/people/cut/bubi1.webp',
         'img/people/cut/bubi2.webp',
         'img/people/cut/bubi3.webp',
         'img/people/cut/gere1.webp',
+        'img/people/cut/gere2.webp',
         'img/people/cut/mara.webp',
         'img/people/cut/snoop.webp',
+        ['img/people/cut/snoop2.webp', 'img/people/cut/mara-ventaglio.webp'],   // es. Jon Snow + Ygritte
       ],
-      cols: 3,                 // colonne della griglia (3 → 4 righe con 6 coppie; 4 → 4 righe con 8 coppie)
+      cols: 4,                 // colonne della griglia (4 → 4 righe con 8 coppie; 3 → 4 righe con 6 coppie)
       count: (found, total) => `${found} / ${total} coppie`,
       endTitle: 'Tutte le coppie.',
-      next: '4-finale.html',
+      next: '3-dolci.html',
     };
 
     const $ = (s) => document.querySelector(s);
@@ -126,7 +129,7 @@
     board.style.gridTemplateColumns = `repeat(${CONFIG.cols}, 1fr)`;
 
     // mazzo: ogni immagine due volte, mescolato
-    const deck = CONFIG.images.flatMap((src, i) => [{ src, id: i }, { src, id: i }]);
+    const deck = CONFIG.images.flatMap((e, i) => Array.isArray(e) ? [{ src: e[0], id: i }, { src: e[1], id: i }] : [{ src: e, id: i }, { src: e, id: i }]);
     for (let i = deck.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [deck[i], deck[j]] = [deck[j], deck[i]]; }
 
     const cards = deck.map((d) => {
@@ -170,7 +173,7 @@
     });
 
     function finish() {
-      Buber.complete(4);
+      Buber.complete(3);
       Buber.sound.win(); Buber.vibrate([25, 40, 25, 40, 70]);
       Buber.confetti({ count: 140 });
       setTimeout(() => { $('#game').classList.add('hidden'); $('#end').classList.remove('hidden'); }, 1000);

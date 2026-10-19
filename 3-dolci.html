@@ -92,7 +92,7 @@
   <canvas id="canvas" aria-hidden="true"></canvas>
 
   <header class="ask">
-    <h1 id="question">Ma ti andrebbe un altro tipo di dolce?</h1>
+    <h1 id="question">Ma per finire, ti andrebbe un altro tipo di dolce?</h1>
     <p class="target" id="target">…</p>
   </header>
 
@@ -111,13 +111,13 @@
 
   <script src="shared.js?v=7"></script>
   <script>
-    Buber.requireStep(2);
+    Buber.requireStep(4);
 
     /* ============================================================
        CONFIG — modifica qui
        ============================================================ */
     const CONFIG = {
-      question: 'Ma ti andrebbe un altro tipo di dolce?',
+      question: 'Ma per finire, ti andrebbe un altro tipo di dolce?',
       // in ordine di eliminazione; `label` è la frase che compare sotto la domanda
       sweets: [
         { label: 'Forse le ciambelle?',  src: 'img/emoji/twemoji/1f369.svg', color: '#c0706a' },
@@ -137,7 +137,7 @@
         { src: 'img/people/cut/gere2.webp', size: 120 },  // bacio
         { src: 'img/people/cut/gere3.webp', size: 120 },  // linguaccia
       ],
-      next: '2-podcast.html',
+      next: '4-finale.html',
     };
 
     const $ = (s) => document.querySelector(s);
@@ -259,7 +259,7 @@
     function done() {
       if (phase === 'done') return;
       phase = 'done';
-      Buber.complete(2);
+      Buber.complete(4);
       Buber.sound.win();
       $('#after').classList.remove('hidden');
     }

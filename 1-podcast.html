@@ -165,7 +165,7 @@
 
   <script src="shared.js?v=7"></script>
   <script>
-    Buber.requireStep(3);
+    Buber.requireStep(2);
 
     /* ============================================================
        CONFIG — modifica qui
@@ -194,7 +194,7 @@
       ],
       endTitle: 'Ok, la scaletta della prima puntata la abbiamo.',
       endMsg: '',                         // riga sotto (vuota = nascosta)
-      next: '3-memory.html',
+      next: '2-memory.html',
     };
 
     const $ = (s) => document.querySelector(s);
@@ -400,7 +400,7 @@
     });
 
     function finish() {
-      Buber.complete(3);
+      Buber.complete(2);
       Buber.sound.win(); Buber.vibrate([25, 40, 25, 40, 70]);
       Buber.confetti({ count: 140 });
       setTimeout(() => { $('#cross').classList.add('hidden'); $('#end').classList.remove('hidden'); }, 1000);
