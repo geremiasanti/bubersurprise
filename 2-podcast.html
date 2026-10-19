@@ -122,8 +122,8 @@
 
     /* fine */
     #end { justify-content: center; text-align: center; }
-    #end h2 { font-size: clamp(2rem, 9vw, 2.6rem); max-width: 16ch; }
-    #end p { margin: 12px 0 30px; color: var(--muted); max-width: 28ch; }
+    #end h2 { font-size: clamp(1.9rem, 8vw, 2.4rem); max-width: 18ch; margin: 0 auto 30px; }
+    #end p { margin: -14px 0 30px; color: var(--muted); max-width: 28ch; }
 
     @media (max-height: 700px) { .key { height: 42px; } .mid { gap: 18px; } }
   </style>
@@ -157,9 +157,8 @@
   <!-- 3. fine -->
   <section id="end" class="screen hidden">
     <div class="rise">
-      <p class="eyebrow">Risolto</p>
-      <h2 id="end-title">Un podcast così lo ascolterei.</h2>
-      <p id="end-msg">Puntata uno, quando vuoi.</p>
+      <h2 id="end-title">Ok, la scaletta della prima puntata la abbiamo.</h2>
+      <p id="end-msg"></p>
       <a class="btn" id="next" href="#">Avanti</a>
     </div>
   </section>
@@ -193,9 +192,9 @@
         { clue: 'Difficile da spiegare. Però quanti alberi hai disegnato.', answer: 'XBARRA',    row: 3, col: 3, dir: 'a' },
         { clue: 'Di questo tocca parlare per forza.',                      answer: 'FEMMINISMO', row: 1, col: 0, dir: 'a' },
       ],
-      endTitle: 'Un podcast così lo ascolterei.',
-      endMsg: 'Puntata uno, quando vuoi.',
-      next: '3-prossimo.html',
+      endTitle: 'Ok, la scaletta della prima puntata la abbiamo.',
+      endMsg: '',                         // riga sotto (vuota = nascosta)
+      next: '3-memory.html',
     };
 
     const $ = (s) => document.querySelector(s);
@@ -205,6 +204,7 @@
     $('#go').textContent = CONFIG.intro.button;
     $('#end-title').textContent = CONFIG.endTitle;
     $('#end-msg').textContent = CONFIG.endMsg;
+    if (!CONFIG.endMsg) $('#end-msg').remove();
     $('#next').href = CONFIG.next;
     CONFIG.intro.images.forEach((src) => { const im = new Image(); im.src = src; im.alt = ''; $('#pics').appendChild(im); });
     if (!CONFIG.intro.images.length) $('#pics').remove();
